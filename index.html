@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>নোটপ্যাড</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --background-color: #f2f2f7;
+            --surface-color: #ffffff;
+            --text-color: #1c1c1e;
+            --secondary-text-color: #8e8e93;
+            --border-color: #c6c6c8;
+            --danger-color: #ff3b30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #app {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- বাটন স্টাইল --- */
+        .btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            color: var(--primary-color);
+        }
+
+        .btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        
+        .btn-danger {
+            color: var(--danger-color);
+        }
+
+        /* --- হোম পেজ স্টাইল --- */
+        .home-header {
+            background-color: var(--surface-color);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .note-list-container {
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .note-item {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .note-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+
+        .note-item-content {
+            flex-grow: 1;
+            margin-right: 10px;
+            overflow: hidden;
+        }
+
+        .note-item-title {
+            font-size: 17px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-item-date {
+            font-size: 13px;
+            color: var(--secondary-text-color);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+            z-index: 100;
+        }
+
+        .fab svg {
+            fill: white;
+        }
+
+        .fab:hover {
+            background-color: #005ecb;
+        }
+
+        /* --- এডিটর পেজ স্টাইল --- */
+        .editor-header {
+            background-color: var(--surface-color);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-title-input {
+            font-size: 17px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            flex-grow: 1;
+            margin: 0 16px;
+            outline: none;
+        }
+
+        #note-content {
+            flex-grow: 1;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            background-color: var(--surface-color);
+            resize: none;
+            font-family: inherit;
+        }
+
+        /* --- মোডাল স্টাইল --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background-color: var(--surface-color);
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal h3 {
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .modal input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-actions .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .modal-actions .btn-confirm {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal-actions .btn-confirm:hover {
+            background-color: #005ecb;
+        }
+
+        /* --- শেয়ারড নোট ভিউ স্টাইল --- */
+        .shared-note-container {
+            padding: 20px;
+            background-color: var(--surface-color);
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.7;
+        }
+        
+        /* --- লোডিং স্পিনার --- */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 50px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div class="loader"></div>
+    </div>
+
+    <!-- আইকন গুলো হিডেন রাখা হয়েছে -->
+    <div style="display: none;">
+        <svg id="icon-add" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <svg id="icon-back" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <svg id="icon-save" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        <svg id="icon-share" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        <svg id="icon-delete" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const appContainer = document.getElementById('app');
+
+            // আপনার Firebase কনফিগারেশন
+            const firebaseConfig = {
+                apiKey: "AIzaSyAafYXYjEXTUE2NQAXj-sM4V1UNDwZ0jF0",
+                authDomain: "notepax.firebaseapp.com",
+                projectId: "notepax",
+                storageBucket: "notepax.firebasestorage.app",
+                messagingSenderId: "932656802190",
+                appId: "1:932656802190:web:6f60687f8ad75a79511cdf"
+            };
+
+            // Firebase ইনিশিয়ালাইজ
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            
+            // --- রাউটিং সিস্টেম ---
+            const router = {
+                home: () => renderHomeView(),
+                new: () => renderEditorView(),
+                edit: (id) => renderEditorView(id),
+                shared: (data) => renderSharedNoteView(data),
+            };
+
+            const parseHash = () => {
+                const hash = window.location.hash.slice(1).split('/');
+                const route = hash[0];
+                const params = hash[1];
+                if (router[route]) {
+                    router[route](params);
+                } else {
+                    router.home();
+                }
+            };
+
+            window.addEventListener('hashchange', parseHash);
+            parseHash();
+
+            // --- ভিউ রেন্ডার ফাংশন ---
+            async function renderHomeView() {
+                appContainer.innerHTML = '<div class="loader"></div>';
+                try {
+                    const snapshot = await db.collection('notes').orderBy('updatedAt', 'desc').get();
+                    const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    
+                    appContainer.innerHTML = `
+                        <header class="home-header">আমার নোটস</header>
+                        <div class="note-list-container">
+                            ${notes.length === 0 ? '<p style="text-align:center; padding: 40px; color: var(--secondary-text-color);">কোনো নোট নেই। নতুন নোট তৈরি করতে নিচের বাটনে চাপুন।</p>' : 
+                                notes.map(note => `
+                                    <div class="note-item" data-id="${note.id}">
+                                        <div class="note-item-content">
+                                            <div class="note-item-title">${note.title || 'Untitled'} ${note.isPasswordProtected ? '<span style="color: var(--primary-color); margin-left: 8px;">🔒</span>' : ''}</div>
+                                            <div class="note-item-date">আপডেট: ${new Date(note.updatedAt.toDate()).toLocaleString('bn-BD')}</div>
+                                        </div>
+                                        <div class="note-item-actions">
+                                            <button class="btn btn-danger btn-delete" data-id="${note.id}" title="ডিলেট করুন">
+                                                ${document.getElementById('icon-delete').innerHTML}
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                        </div>
+                        <button class="btn fab" id="add-note-btn">
+                            ${document.getElementById('icon-add').innerHTML}
+                        </button>
+                    `;
+
+                    document.getElementById('add-note-btn').onclick = () => window.location.hash = '#new';
+                    document.querySelectorAll('.btn-delete').forEach(btn => {
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            const noteId = btn.dataset.id;
+                            const noteData = notes.find(n => n.id === noteId);
+                            handleDelete(noteId, noteData);
+                        };
+                    });
+                    document.querySelectorAll('.note-item').forEach(item => {
+                        item.onclick = () => {
+                            const noteId = item.dataset.id;
+                            const noteData = notes.find(n => n.id === noteId);
+                            if (noteData.isPasswordProtected) {
+                                promptPasswordForAccess(noteId, 'edit');
+                            } else {
+                                window.location.hash = `#edit/${noteId}`;
+                            }
+                        };
+                    });
+                } catch (error) {
+                    console.error("Error fetching notes: ", error);
+                    appContainer.innerHTML = `<p style="text-align:center; padding: 40px; color: var(--danger-color);">নোট লোড করতে সমস্যা হচ্ছে।<br>দয়া করে Firebase সিকিউরিটি রুলস চেক করুন।</p>`;
+                }
+            }
+
+            async function renderEditorView(noteId = null) {
+                let note = null;
+                if (noteId) {
+                    const doc = await db.collection('notes').doc(noteId).get();
+                    if (doc.exists) note = { id: doc.id, ...doc.data() };
+                }
+                
+                appContainer.innerHTML = `
+                    <header class="editor-header">
+                        <button class="btn" id="back-btn">${document.getElementById('icon-back').innerHTML}</button>
+                        <input type="text" class="editor-title-input" id="note-title" placeholder="শিরোনাম..." value="${note ? note.title || '' : ''}">
+                        <div>
+                            <button class="btn" id="share-btn" title="শেয়ার করুন">${document.getElementById('icon-share').innerHTML}</button>
+                            <button class="btn" id="save-btn" title="সেভ করুন">${document.getElementById('icon-save').innerHTML}</button>
+                        </div>
+                    </header>
+                    <textarea id="note-content" placeholder="এখানে লিখুন...">${note ? note.content : ''}</textarea>
+                `;
+
+                const titleInput = document.getElementById('note-title');
+                const contentArea = document.getElementById('note-content');
+                
+                document.getElementById('back-btn').onclick = () => window.location.hash = '#home';
+                document.getElementById('save-btn').onclick = () => handleSave(noteId, titleInput.value, contentArea.value);
+                document.getElementById('share-btn').onclick = () => handleShare(titleInput.value, contentArea.value);
+            }
+
+            function renderSharedNoteView(encodedData) {
+                try {
+                    const decodedData = JSON.parse(decodeURIComponent(atob(encodedData)));
+                    const { content, passwordHash } = decodedData;
+
+                    const showContent = () => {
+                        appContainer.innerHTML = `
+                            <header class="editor-header">
+                                <button class="btn" id="back-btn">${document.getElementById('icon-back').innerHTML}</button>
+                                <h3 style="flex-grow: 1; text-align: center;">শেয়ার করা নোট</h3>
+                            </header>
+                            <div class="shared-note-container">${content}</div>
+                        `;
+                        document.getElementById('back-btn').onclick = () => window.location.hash = '#home';
+                    };
+
+                    if (passwordHash) {
+                        appContainer.innerHTML = `
+                            <div class="modal-overlay">
+                                <div class="modal">
+                                    <h3>🔒 এই নোটটি পাসওয়ার্ড দিয়ে সুরক্ষিত</h3>
+                                    <input type="password" id="password-input" placeholder="পাসওয়ার্ড লিখুন">
+                                    <div class="modal-actions">
+                                        <button class="btn btn-cancel" id="cancel-btn">বাতিল</button>
+                                        <button class="btn btn-confirm" id="unlock-btn">আনলক করুন</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('unlock-btn').onclick = async () => {
+                            const password = document.getElementById('password-input').value;
+                            if (await hashPassword(password) === passwordHash) {
+                                showContent();
+                            } else {
+                                alert('ভুল পাসওয়ার্ড!');
+                            }
+                        };
+                        document.getElementById('cancel-btn').onclick = () => window.location.hash = '#home';
+                    } else {
+                        showContent();
+                    }
+                } catch (e) {
+                    appContainer.innerHTML = `<p style="text-align:center; padding: 40px;">লিংকটি সঠিক নয় বা ডাটা ক্ষতিগ্রস্ত হয়েছে।</p>`;
+                }
+            }
+
+            // --- হ্যান্ডলার ফাংশন ---
+            async function handleSave(noteId, title, content) {
+                if (!content.trim()) { alert('নোটটি খালি! কিছু একটা লিখুন।'); return; }
+                const now = firebase.firestore.Timestamp.now();
+                const noteData = { title, content, updatedAt: now };
+                try {
+                    if (noteId) await db.collection('notes').doc(noteId).update(noteData);
+                    else {
+                        noteData.createdAt = now;
+                        noteData.isPasswordProtected = false;
+                        noteData.passwordHash = null;
+                        await db.collection('notes').add(noteData);
+                    }
+                    window.location.hash = '#home';
+                } catch (error) {
+                    console.error("Error saving note: ", error);
+                    alert('নোট সেভ করতে সমস্যা হয়েছে।');
+                }
+            }
+
+            async function handleShare(title, content) {
+                if (!content.trim()) { alert('শেয়ার করার জন্য নোটটি খালি! কিছু একটা লিখুন।'); return; }
+                const password = prompt('পাসওয়ার্ড সেট করুন (ফাঁকা রাখলে পাসওয়ার্ড লাগবে না):');
+                const passwordHash = password ? await hashPassword(password) : null;
+                const dataToShare = { content, passwordHash };
+                const encodedData = btoa(encodeURIComponent(JSON.stringify(dataToShare)));
+                const shareableLink = `${window.location.origin}${window.location.pathname}#shared/${encodedData}`;
+                
+                navigator.clipboard.writeText(shareableLink).then(() => {
+                    alert('লিংক ক্লিপবোর্ডে কপি হয়েছে!\n\nএখন আপনি এই লিংকটি যে কাউকে পাঠাতে পারেন।');
+                }).catch(() => {
+                    prompt('লিংক কপি করতে পারেনি, নিচে থেকে ম্যানুয়ালি কপি করুন:', shareableLink);
+                });
+            }
+
+            async function handleDelete(noteId, noteData) {
+                if (!noteData) return;
+                if (noteData.isPasswordProtected) {
+                    promptPasswordForAccess(noteId, 'delete');
+                    return;
+                }
+                confirmAndDelete(noteId);
+            }
+
+            async function promptPasswordForAccess(noteId, action) {
+                const doc = await db.collection('notes').doc(noteId).get();
+                if (!doc.exists) return;
+                const noteData = doc.data();
+
+                appContainer.innerHTML = `
+                    <div class="modal-overlay">
+                        <div class="modal">
+                            <h3>🔒 এই নোটটি পাসওয়ার্ড দিয়ে সুরক্ষিত</h3>
+                            <input type="password" id="password-input" placeholder="পাসওয়ার্ড লিখুন">
+                            <div class="modal-actions">
+                                <button class="btn btn-cancel" id="cancel-btn">বাতিল</button>
+                                <button class="btn btn-confirm" id="unlock-btn">আনলক করুন</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('unlock-btn').onclick = async () => {
+                    const password = document.getElementById('password-input').value;
+                    if (await hashPassword(password) === noteData.passwordHash) {
+                        if (action === 'edit') window.location.hash = `#edit/${noteId}`;
+                        else if (action === 'delete') confirmAndDelete(noteId);
+                    } else {
+                        alert('ভুল পাসওয়ার্ড!');
+                    }
+                };
+                document.getElementById('cancel-btn').onclick = () => renderHomeView();
+            }
+
+            async function confirmAndDelete(noteId) {
+                if (!confirm('আপনি কি নিশ্চিত যে এই নোটটি ডিলেট করতে চান?')) return;
+                try {
+                    await db.collection('notes').doc(noteId).delete();
+                    renderHomeView();
+                } catch (error) {
+                    console.error("Error deleting note: ", error);
+                    alert('নোট ডিলেট করতে সমস্যা হয়েছে।');
+                }
+            }
+
+            // --- ইউটিলিটি ফাংশন ---
+            async function hashPassword(password) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+        });
+    </script>
+</body>
+</html>
